@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class Client {
    public String name;
-   public int id;
+   public static int id = 0;
     private Socket socket;
    private InputStreamReader in;
    private OutputStreamWriter out;
@@ -21,17 +21,18 @@ public class Client {
         this.outToServer = new BufferedWriter(this.out);
         this.console = new Scanner(System.in);
         this.name = name;
+       sendMsg(name);
     }
-    void read() throws IOException {
-        readFromServer.readLine();
+    String getMsg() throws IOException {
+       return "\nServer :"+readFromServer.readLine();
     }
-    void write() throws IOException {
+    void sendMsg() throws IOException {
         String msg  = console.nextLine();
         outToServer.write(msg);
         outToServer.newLine();
         outToServer.flush();
     }
-    void write(String msg)throws IOException{
+    void sendMsg(String msg)throws IOException{
         outToServer.write(msg);
         outToServer.newLine();
         outToServer.flush();
