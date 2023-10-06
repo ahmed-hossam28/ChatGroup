@@ -23,7 +23,7 @@ public class Server {
     Socket lastClient(){
         return socket.get(socket.size()-1);
     }
-    void getClient() throws IOException {
+    void connectClient() throws IOException {
         socket.add(server.accept());
         in.add(new InputStreamReader(lastClient().getInputStream()));
         out.add(new OutputStreamWriter(lastClient().getOutputStream()));
@@ -38,7 +38,7 @@ public class Server {
     void run() throws IOException {
         while(!server.isClosed()){
             System.out.println("Waiting for Clients...");
-             getClient();
+             connectClient();
              String user = getUser();
             System.out.printf("%s has connected!\n",user);
             for(var client:outToClient){
