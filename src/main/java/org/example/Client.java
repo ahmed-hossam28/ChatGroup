@@ -23,8 +23,8 @@ public class Client {
         this.name = name;
        sendMsg(name);
     }
-    String getMsg() throws IOException {
-       return "\nServer :"+readFromServer.readLine();
+    String getServerMsg() throws IOException {
+       return readFromServer.readLine();
     }
     void sendMsg() throws IOException {
         String msg  = console.nextLine();
@@ -36,6 +36,13 @@ public class Client {
         outToServer.write(msg);
         outToServer.newLine();
         outToServer.flush();
+    }
+    void close() throws IOException {
+        socket.close();
+        in.close();
+        out.close();
+        readFromServer.close();
+        outToServer.close();
     }
 
 

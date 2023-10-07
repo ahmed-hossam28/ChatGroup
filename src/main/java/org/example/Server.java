@@ -4,48 +4,96 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
 
 public class Server {
-    private ArrayList<Socket>socket = new ArrayList<>();
-    private ArrayList<InputStreamReader> in = new ArrayList<>();
-    private ArrayList<OutputStreamWriter> out = new ArrayList<>() ;
-    private ArrayList<BufferedReader> readFromClient  = new ArrayList<>();
-    private ArrayList<BufferedWriter> outToClient  = new ArrayList<>();
+    private ArrayList<String>users = new ArrayList<>();
+    private HashMap<String,Socket>getSocket = new HashMap<>();
+    private HashMap<String,InputStreamReader>getInputStream = new HashMap<>();
+    private HashMap<String,OutputStreamWriter>getOutputStream = new HashMap<>();
+    private HashMap<String,BufferedReader>getBufferReader = new HashMap<>();
+    private HashMap<String,BufferedWriter>getBufferWriter = new HashMap<>();
+
     private ServerSocket server;
+    String lastUser(){
+        return users.get(users.size()-1);
+    }
     Server() throws IOException {
         this.server = new ServerSocket(1234);
+    }
+    String getUser(BufferedReader client) throws IOException {
+      return client.readLine();
+    }
 
-    }
-    String getUser() throws IOException {
-
-      return readFromClient.get(readFromClient.size()-1).readLine();
-    }
-    Socket lastClient(){
-        return socket.get(socket.size()-1);
-    }
     void connectClient() throws IOException {
-        socket.add(server.accept());
-        in.add(new InputStreamReader(lastClient().getInputStream()));
-        out.add(new OutputStreamWriter(lastClient().getOutputStream()));
-        readFromClient.add(new BufferedReader(in.get(in.size()-1)));
-        outToClient.add(new BufferedWriter(out.get(out.size()-1)));
+        Socket socket = server.accept();
+        InputStreamReader in   = new InputStreamReader(socket.getInputStream());
+        OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream());
+        BufferedReader br = new BufferedReader(in);
+        BufferedWriter wr = new BufferedWriter(out);
+        String user = br.readLine();//getting username
+        users.add(user);
+        getSocket.put(user,socket);
+        getInputStream.put(user,in);
+        getOutputStream.put(user,out);
+        getBufferReader.put(user,br);
+        getBufferWriter.put(user,wr);
     }
-    void Notify(BufferedWriter client,String user) throws IOException {
-        client.write(user+" has connected!");
-        client.newLine();
-        client.flush();
+    void notifying(String userName) throws IOException {
+        for(String user: users){
+            BufferedWriter send = getBufferWriter.get(user);
+            //what if the user id disconnected?
+            send.write("\nServer :"+userName+" has connected!");
+            send.newLine();
+            send.flush();
+        }
+
+    }
+    void usersMessages() throws IOException {
+      for(var user:users){
+          new Thread(()->{
+              BufferedReader br = getBufferReader.get(user);
+              String msg = null;
+              try {
+                  msg = br.readLine();
+              } catch (IOException e) {
+                  throw new RuntimeException(e);
+              }
+              for(var user2:users){
+                  if(user.equals(user2))continue;
+                  BufferedWriter wr = getBufferWriter.get(user2);
+                  try {
+                      sendMsg(wr,"@"+user+": "+msg+"\n");
+                  } catch (IOException e) {
+                      throw new RuntimeException(e);
+                  }
+              }
+          }).start();
+
+      }
+    }
+    void sendMsg(BufferedWriter wr,String msg) throws IOException {
+        wr.write(msg);
+        wr.newLine();;
+        wr.flush();
     }
     void run() throws IOException {
         while(!server.isClosed()){
-            System.out.println("Waiting for Clients...");
-             connectClient();
-             String user = getUser();
-            System.out.printf("%s has connected!\n",user);
-            for(var client:outToClient){
-                if(client.equals(outToClient.get(outToClient.size()-1)))break;
-                Notify(client,user);
-            }
 
+            System.out.println("Waiting for Clients...");
+
+                   connectClient();
+             String newUser =lastUser();
+            System.out.printf("%s has connected!\n",newUser);
+           new Thread(()->{
+               try {
+                   notifying(newUser);
+               } catch (IOException e) {
+                   throw new RuntimeException(e);
+               }
+           }).start();
+            usersMessages();
         }
     }
     boolean isRunning(){
@@ -53,9 +101,6 @@ public class Server {
     }
     void stop() throws IOException {
         server.close();
-    }
-    void getMessage(){
-
     }
 
 }
