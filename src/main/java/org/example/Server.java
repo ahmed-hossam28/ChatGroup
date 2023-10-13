@@ -67,23 +67,26 @@ public class Server {
     void usersMessages() {
       for(var user:users){
          executor.execute(()->{
-              BufferedReader br = getBufferReader.get(user);
-              String msg = null;
-              try {
-                  msg = br.readLine();
-              } catch (IOException e) {
-                  throw new RuntimeException(e);
-              }
-              for(var user2:users){
-                  if(user.equals(user2))continue;
-                  BufferedWriter wr = getBufferWriter.get(user2);
-                  try {
-                      sendMsg(wr,"@"+user+": "+msg+"\n");
-                  } catch (IOException e) {
-                      throw new RuntimeException(e);
-                  }
-              }
-              System.out.printf("Message from %s has been sent\n",user);
+             //this while true was the solution for the crashed messaging
+           while(true)  {
+                 BufferedReader br = getBufferReader.get(user);
+                 String msg = null;
+                 try {
+                     msg = br.readLine();
+                 } catch (IOException e) {
+                     throw new RuntimeException(e);
+                 }
+                 for (var user2 : users) {
+                     if (user.equals(user2)) continue;
+                     BufferedWriter wr = getBufferWriter.get(user2);
+                     try {
+                         sendMsg(wr, "@" + user + ": " + msg + "\n");
+                     } catch (IOException e) {
+                         throw new RuntimeException(e);
+                     }
+                 }
+                 System.out.printf("Message from %s has been sent\n", user);
+             }
           });
 
       }
@@ -93,20 +96,34 @@ public class Server {
         wr.newLine();;
         wr.flush();
     }
-    void run() throws IOException {
-        while(!server.isClosed()){
-            System.out.println("...");
-            /////
-            // BUG IS FOUND HERE
-            String newUser  =  connectClient();//got it !! the problem was here (1)
-            ////
+    void startThreadConnection(){
+        executor.execute(()->{
+        System.out.println("waiting for clients..");
+        String newUser;
+            try {
+                 newUser  =  connectClient();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             System.out.printf("%s has connected!\n",newUser);
             notification(newUser);
-            /////
-            //BUG IS FOUND HERE
-            usersMessages();//and here as well (2) when this finish
-            //HERE because we can run it on another thread or run the connectClient func on another thread
-            //// the program will be blocked with the connectClient func because it will wait for users
+
+        });
+    }
+    void startSyncConnection() throws IOException {
+        System.out.println("waiting for clients..");
+        String newUser  =  connectClient();//the problem is that it blocks the server from receiving messages
+        System.out.printf("%s has connected!\n",newUser);
+        notification(newUser);
+    }
+
+    void startMessaging(){
+        executor.execute(()->usersMessages());
+    }
+    void run() throws IOException {
+        while(!server.isClosed()){
+            startMessaging();
+            startSyncConnection();
         }
     }
     boolean isRunning(){
