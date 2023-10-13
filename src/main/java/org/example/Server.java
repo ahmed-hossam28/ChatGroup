@@ -26,19 +26,20 @@ public class Server {
       return client.readLine();
     }
 
-    void connectClient() throws IOException {
+    String connectClient() throws IOException {
         Socket socket = server.accept();
         InputStreamReader in   = new InputStreamReader(socket.getInputStream());
         OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream());
         BufferedReader br = new BufferedReader(in);
         BufferedWriter wr = new BufferedWriter(out);
-        String user = br.readLine();//getting username
+        String user =getUser(br);//getting username
         users.add(user);
         getSocket.put(user,socket);
         getInputStream.put(user,in);
         getOutputStream.put(user,out);
         getBufferReader.put(user,br);
         getBufferWriter.put(user,wr);
+        return user;
     }
     void notifying(String userName) throws IOException {
         for(String user: users){
@@ -50,7 +51,16 @@ public class Server {
         }
 
     }
-    void usersMessages() throws IOException {
+    void notification(String userName){
+        new Thread(()->{
+            try {
+                notifying(userName);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
+    }
+    void usersMessages() {
       for(var user:users){
           new Thread(()->{
               BufferedReader br = getBufferReader.get(user);
@@ -69,6 +79,7 @@ public class Server {
                       throw new RuntimeException(e);
                   }
               }
+              System.out.printf("Message from %s has been sent\n",user);
           }).start();
 
       }
@@ -80,19 +91,10 @@ public class Server {
     }
     void run() throws IOException {
         while(!server.isClosed()){
-
-            System.out.println("Waiting for Clients...");
-
-                   connectClient();
-             String newUser =lastUser();
+            System.out.println("...");
+            String newUser  =  connectClient();
             System.out.printf("%s has connected!\n",newUser);
-           new Thread(()->{
-               try {
-                   notifying(newUser);
-               } catch (IOException e) {
-                   throw new RuntimeException(e);
-               }
-           }).start();
+            notification(newUser);
             usersMessages();
         }
     }
