@@ -96,11 +96,17 @@ public class Server {
     void run() throws IOException {
         while(!server.isClosed()){
             System.out.println("...");
+            /////
+            // BUG IS FOUND HERE
             String newUser  =  connectClient();//got it !! the problem was here (1)
+            ////
             System.out.printf("%s has connected!\n",newUser);
             notification(newUser);
+            /////
+            //BUG IS FOUND HERE
             usersMessages();//and here as well (2) when this finish
-            // the program will be blocked with the connectClient func because it will wait for users
+            //HERE because we can run it on another thread or run the connectClient func on another thread
+            //// the program will be blocked with the connectClient func because it will wait for users
         }
     }
     boolean isRunning(){
