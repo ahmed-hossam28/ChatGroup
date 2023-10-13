@@ -3,16 +3,20 @@ package org.example;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 public class RunClient {
    static String name;
+   static ExecutorService executor = Executors.newFixedThreadPool(10);
      static void menu(){
          System.out.println("Select Your Option..");
          System.out.println("1)add user\n2)Quite\nEnter the Number of Your Option");
 
      }
      static void receiveServerMsg(){
-         new Thread(()-> {
+        executor.execute(()-> {
          try {
              while(true) {
                  System.out.println("\n"+client.getServerMsg());
@@ -20,26 +24,27 @@ public class RunClient {
          } catch (IOException e) {
              throw new RuntimeException(e);
          }
-     }).start();
+     });
      }
     static void userChat(){
-       new Thread(()->{
-           while(true){
-             System.out.printf("@%s: ",name);
-           String msg = null;
-           try {
-               msg = in.readLine();
-           } catch (IOException e) {
-               throw new RuntimeException(e);
+       executor.execute(()-> {
+           while (true) {
+               System.out.printf("@%s: ", name);
+               String msg = null;
+               try {
+                   msg = in.readLine();
+               } catch (IOException e) {
+                   throw new RuntimeException(e);
+               }
+               try {
+                   client.sendMsg(msg);
+               } catch (IOException e) {
+                   throw new RuntimeException(e);
+               }
            }
-           try {
-               client.sendMsg(msg);
-           } catch (IOException e) {
-               throw new RuntimeException(e);
-           }
-       }}).start();
+       });
      }
-   static   BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+     static  BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
      static  Client client = null;
     public static void main(String[] args) throws IOException {
        int op;

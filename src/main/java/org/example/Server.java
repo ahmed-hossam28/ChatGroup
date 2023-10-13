@@ -6,6 +6,8 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     private ArrayList<String>users = new ArrayList<>();
@@ -14,6 +16,7 @@ public class Server {
     private HashMap<String,OutputStreamWriter>getOutputStream = new HashMap<>();
     private HashMap<String,BufferedReader>getBufferReader = new HashMap<>();
     private HashMap<String,BufferedWriter>getBufferWriter = new HashMap<>();
+    private ExecutorService executor = Executors.newFixedThreadPool(10);
 
     private ServerSocket server;
     String lastUser(){
@@ -52,17 +55,18 @@ public class Server {
 
     }
     void notification(String userName){
-        new Thread(()->{
-            try {
-                notifying(userName);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }).start();
+         executor.execute(()-> {
+             try {
+                 notifying(userName);
+             } catch (IOException e) {
+                 throw new RuntimeException(e);
+             }
+         });
+
     }
     void usersMessages() {
       for(var user:users){
-          new Thread(()->{
+         executor.execute(()->{
               BufferedReader br = getBufferReader.get(user);
               String msg = null;
               try {
@@ -80,7 +84,7 @@ public class Server {
                   }
               }
               System.out.printf("Message from %s has been sent\n",user);
-          }).start();
+          });
 
       }
     }
@@ -92,10 +96,11 @@ public class Server {
     void run() throws IOException {
         while(!server.isClosed()){
             System.out.println("...");
-            String newUser  =  connectClient();
+            String newUser  =  connectClient();//got it !! the problem was here (1)
             System.out.printf("%s has connected!\n",newUser);
             notification(newUser);
-            usersMessages();
+            usersMessages();//and here as well (2) when this finish
+            // the program will be blocked with the connectClient func because it will wait for users
         }
     }
     boolean isRunning(){
