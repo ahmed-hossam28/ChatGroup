@@ -73,6 +73,7 @@ public class Server {
                  String msg = null;
                  try {
                      msg = br.readLine();
+                     if(msg.equals(""))continue;
                  } catch (IOException e) {
                      throw new RuntimeException(e);
                  }

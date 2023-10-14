@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
+
 
 public class RunClient {
    static String name;
@@ -19,7 +19,7 @@ public class RunClient {
         executor.execute(()-> {
          try {
              while(true) {
-                 System.out.println("\n"+client.getServerMsg());
+                 System.out.print("\n"+client.getServerMsg());
              }
          } catch (IOException e) {
              throw new RuntimeException(e);
@@ -28,6 +28,7 @@ public class RunClient {
      }
     static void userChat(){
        executor.execute(()-> {
+          // System.out.printf("@%s: ", name);
            while (true) {
                System.out.printf("@%s: ", name);
                String msg = null;
