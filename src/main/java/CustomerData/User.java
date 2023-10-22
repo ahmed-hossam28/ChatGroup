@@ -81,11 +81,16 @@ public class User {
         return bufferedWriter;
     }
    public void send(String msg) throws IOException {
+       if(socket.isClosed())return;
+
         bufferedWriter.write(msg);
         bufferedWriter.newLine();;
         bufferedWriter.flush();
     }
    public String receive() throws IOException {
       return  bufferedReader.readLine();
+    }
+    public void close() throws IOException {
+       socket.close();
     }
 }

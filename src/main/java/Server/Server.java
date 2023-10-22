@@ -85,23 +85,40 @@ public class Server {
         executor.execute(()->{//de we need to start new thread for the same user every time??
             //this while true was the solution for the crashed messaging
             while(true)  {
+                boolean isClosed = false;
                 BufferedReader br = sender.getBufferedReader();
                 String msg = null;
                 try {
                     msg = br.readLine();
-                    if(msg.equals(""))continue;
+                    if(msg.equals("close")){
+                        sender.close();
+                        isClosed=true;
+                        System.out.println(sender.getName()+" has disconnected!");
+                    }
+                    else if(msg.equals(""))continue;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
                 for (User receiver : users) {
                     if (sender.equals(receiver)) continue;
-                    try {
-                        receiver.send( "@" + sender + ": " + msg + "\n");
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                    if(isClosed){
+                        try {
+                            receiver.send("Server "+sender.getName()+" has disconnected!\n");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    else{
+                        try {
+                            receiver.send("@" + sender.getName() + ": " + msg + "\n");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
-                System.out.printf("Message from %s has been sent\n", sender);
+                if(!isClosed)
+                  System.out.printf("Message from %s has been sent\n", sender);
+                else break;
             }
         });
     }
