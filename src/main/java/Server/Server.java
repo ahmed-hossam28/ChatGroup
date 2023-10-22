@@ -1,31 +1,27 @@
-package org.example;
+package Server;
+
+import CustomerData.User;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.concurrent.CompletableFuture;
+import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
-    private ArrayList<String>users = new ArrayList<>();
-    private HashMap<String,Socket>getSocket = new HashMap<>();
-    private HashMap<String,InputStreamReader>getInputStream = new HashMap<>();
-    private HashMap<String,OutputStreamWriter>getOutputStream = new HashMap<>();
-    private HashMap<String,BufferedReader>getBufferReader = new HashMap<>();
-    private HashMap<String,BufferedWriter>getBufferWriter = new HashMap<>();
-    private ExecutorService executor = Executors.newFixedThreadPool(10);
+    private final ArrayList<User> users = new ArrayList<>();//double users have the same name? it's okay now :D!!
+    private final ExecutorService executor = Executors.newFixedThreadPool(10);
 
-    private ServerSocket server;
-    String lastUser(){
+    private final ServerSocket server;
+    User lastUser(){
         return users.get(users.size()-1);
     }
     Server() throws IOException {
         this.server = new ServerSocket(1234);
     }
-    String getUser(BufferedReader client) throws IOException {
+    String getUserName(BufferedReader client) throws IOException {
       return client.readLine();
     }
 
@@ -35,24 +31,17 @@ public class Server {
         OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream());
         BufferedReader br = new BufferedReader(in);
         BufferedWriter wr = new BufferedWriter(out);
-        String user =getUser(br);//getting username
+        String userName = getUserName(br);
+        User user = new User(userName,socket,in,out,br,wr);
         users.add(user);
-        getSocket.put(user,socket);
-        getInputStream.put(user,in);
-        getOutputStream.put(user,out);
-        getBufferReader.put(user,br);
-        getBufferWriter.put(user,wr);
-        return user;
+        happyChatting(user);//  :)
+        return userName;
     }
     void notifying(String userName) throws IOException {
-        for(String user: users){
-            BufferedWriter send = getBufferWriter.get(user);
-            //what if the user id disconnected?
-            send.write("\nServer :"+userName+" has connected!");
-            send.newLine();
-            send.flush();
+        for(User user: users){
+            //what if the user is disconnected?
+            user.send("\nServer :"+userName+" has connected!");
         }
-
     }
     void notification(String userName){
          executor.execute(()-> {
@@ -65,11 +54,12 @@ public class Server {
 
     }
     void usersMessages() {
-      for(var user:users){
-         executor.execute(()->{
+      for(User sender: users){
+          //each user will work on his own thread
+         executor.execute(()->{//de we need to start new thread for the same user every time??
              //this while true was the solution for the crashed messaging
            while(true)  {
-                 BufferedReader br = getBufferReader.get(user);
+                 BufferedReader br = sender.getBufferedReader();
                  String msg = null;
                  try {
                      msg = br.readLine();
@@ -77,25 +67,43 @@ public class Server {
                  } catch (IOException e) {
                      throw new RuntimeException(e);
                  }
-                 for (var user2 : users) {
-                     if (user.equals(user2)) continue;
-                     BufferedWriter wr = getBufferWriter.get(user2);
+                 for (User receiver : users) {
+                     if (sender.equals(receiver)) continue;
                      try {
-                         sendMsg(wr, "@" + user + ": " + msg + "\n");
+                      receiver.send( "@" + sender + ": " + msg + "\n");
                      } catch (IOException e) {
                          throw new RuntimeException(e);
                      }
                  }
-                 System.out.printf("Message from %s has been sent\n", user);
+                 System.out.printf("Message from %s has been sent\n", sender);
              }
           });
 
       }
     }
-    void sendMsg(BufferedWriter wr,String msg) throws IOException {
-        wr.write(msg);
-        wr.newLine();;
-        wr.flush();
+    void happyChatting(User sender){
+        executor.execute(()->{//de we need to start new thread for the same user every time??
+            //this while true was the solution for the crashed messaging
+            while(true)  {
+                BufferedReader br = sender.getBufferedReader();
+                String msg = null;
+                try {
+                    msg = br.readLine();
+                    if(msg.equals(""))continue;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                for (User receiver : users) {
+                    if (sender.equals(receiver)) continue;
+                    try {
+                        receiver.send( "@" + sender + ": " + msg + "\n");
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                System.out.printf("Message from %s has been sent\n", sender);
+            }
+        });
     }
     void startThreadConnection(){
         executor.execute(()->{
@@ -123,8 +131,8 @@ public class Server {
     }
     void run() throws IOException {
         while(!server.isClosed()){
-            startMessaging();
             startSyncConnection();
+            //startMessaging();
         }
     }
     boolean isRunning(){
