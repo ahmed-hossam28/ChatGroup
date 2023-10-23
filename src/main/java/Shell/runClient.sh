@@ -7,3 +7,7 @@ cd Client;
 rm *.class;
 # shellcheck disable=SC2103
 cd ..;
+# shellcheck disable=SC2164
+cd UserData;
+# shellcheck disable=SC2035
+rm *.class;
