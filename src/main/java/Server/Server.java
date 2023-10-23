@@ -39,11 +39,13 @@ public class Server {
     }
     void notifying(String userName) throws IOException {
         for(User user: users){
+            if(userName.equals(user.getName()))continue;
             //what if the user is disconnected?
+            // problem is solved finally :D   23/10/2023
             user.send("\nServer :"+userName+" has connected!");
         }
     }
-    void notification(String userName){
+    void notification(String userName){//do we need to run this func in separated thread?
          executor.execute(()-> {
              try {
                  notifying(userName);
@@ -51,12 +53,13 @@ public class Server {
                  throw new RuntimeException(e);
              }
          });
-
     }
-    void usersMessages() {
+
+    void usersMessages() {//deprecated
       for(User sender: users){
           //each user will work on his own thread
          executor.execute(()->{//de we need to start new thread for the same user every time??
+
              //this while true was the solution for the crashed messaging
            while(true)  {
                  BufferedReader br = sender.getBufferedReader();
@@ -83,14 +86,16 @@ public class Server {
     }
     void happyChatting(User sender){
         executor.execute(()->{//de we need to start new thread for the same user every time??
+            //well now we don't need to, just start the thread whenever a new user come
             //this while true was the solution for the crashed messaging
             while(true)  {
                 boolean isClosed = false;
-                BufferedReader br = sender.getBufferedReader();
+              //  BufferedReader br = sender.getBufferedReader();
                 String msg = null;
                 try {
-                    msg = br.readLine();
+                    msg = sender.receive();
                     if(msg.equals("close")){
+                        sender.send("close");
                         sender.close();
                         isClosed=true;
                         System.out.println(sender.getName()+" has disconnected!");
@@ -103,7 +108,7 @@ public class Server {
                     if (sender.equals(receiver)) continue;
                     if(isClosed){
                         try {
-                            receiver.send("Server "+sender.getName()+" has disconnected!\n");
+                            receiver.send("Server :"+sender.getName()+" has disconnected!\n");
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -123,6 +128,7 @@ public class Server {
         });
     }
     void startThreadConnection(){
+        //deprecated
         executor.execute(()->{
         System.out.println("waiting for clients..");
         String newUser;
@@ -139,13 +145,14 @@ public class Server {
     void startSyncConnection() throws IOException {
         System.out.println("waiting for clients..");
         String newUser  =  connectClient();//the problem is that it blocks the server from receiving messages
+        // it is solved by run the chat messaging in a separated thread
         System.out.printf("%s has connected!\n",newUser);
         notification(newUser);
     }
 
     void startMessaging(){
         executor.execute(()->usersMessages());
-    }
+    }//deprecated
     void run() throws IOException {
         while(!server.isClosed()){
             startSyncConnection();
