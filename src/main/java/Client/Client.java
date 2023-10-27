@@ -1,6 +1,6 @@
 package Client;
 
-import UserDate.User;
+import UserData.User;
 
 import java.io.*;
 import java.net.Socket;

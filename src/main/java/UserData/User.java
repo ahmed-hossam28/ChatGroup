@@ -1,4 +1,4 @@
-package UserDate;
+package UserData;
 
 import java.io.*;
 import java.net.Socket;

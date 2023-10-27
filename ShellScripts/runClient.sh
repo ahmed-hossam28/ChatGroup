@@ -1,4 +1,6 @@
+# shellcheck disable=SC2164
 cd ..;
+cd src/main/java;
 javac Client/RunClient.java
 java Client.RunClient;
 # shellcheck disable=SC2164
