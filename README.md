@@ -1,16 +1,26 @@
-# ChatGroup is a multithreaded Network applicatoin for messaging between users.
-This app is using the client server architecture.
-I have built this console app using java sockets and it is divided into two parts the server and client.
+# Chat Group Console App
 
-Server Part:
-Server handle the request for connection from the client 
-And receive all the client messages to send it to other clients.
+**Description:**
+ChatGroup is a multithreaded network application designed for real-time messaging between users. Utilizing a client-server architecture, this console application is built using Java sockets and divided into two main components: the server and the client.
 
-Client:
-Client is a user that send connect to the server and can communicate with other users by sending messages and these messages are sent to the server and the server send it to other users.
+**Server Part:**
+The server handles connection requests from clients and receives messages from clients, redistributing them to all connected users.
 
-To run this app:
-To run this app, you must first run the server then you can run the client to make new user and you can run the client again in another terminal to another user.
+**Client:**
+A user acting as a client connects to the server and can communicate with other users by sending messages. The client's messages are relayed to the server, which then broadcasts them to all connected users.
 
-Shell scripts:
-You can run the app on your own but I have made some shell scripts so you can use them.
+**To Run the App:**
+1. First, run the server to handle connection requests and message distribution.
+2. Next, run the client to create a new user.
+3. Optionally, run additional client instances in separate terminals to simulate multiple users.
+
+**Shell Scripts:**
+For convenience, shell scripts have been provided to streamline the process of running the application.
+
+- `runServer.sh`: Execute to run the server.
+- `runClient.sh`: Execute to run a new client.
+
+**Usage:**
+- Compile the Java files using `javac`.
+- Run the server script in one terminal: `./runServer.sh`.
+- Run the client script in another terminal: `./runClient.sh`.
