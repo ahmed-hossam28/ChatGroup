@@ -21,6 +21,7 @@ For convenience, shell scripts have been provided to streamline the process of r
 - `runClient.sh`: Execute to run a new client.
 
 **Usage:**
-- Compile the Java files using `javac`.
+- Compile the Java files using `javac`  and run on your own .
+- Or use the provided shell scripts
 - Run the server script in one terminal: `./runServer.sh`.
 - Run the client script in another terminal: `./runClient.sh`.
